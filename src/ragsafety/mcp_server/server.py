@@ -79,7 +79,14 @@ def build_server():
 def main() -> None:
     mcp = build_server()
     transport = os.environ.get("RAGSAFETY_MCP_TRANSPORT", "streamable-http")
-    mcp.run(transport=transport)
+    if transport == "streamable-http":
+        # Bind to 0.0.0.0 — Azure Container Apps ingress cannot reach a server
+        # listening only on 127.0.0.1 (the SDK default). Served at /mcp.
+        host = os.environ.get("RAGSAFETY_MCP_HOST", "0.0.0.0")  # noqa: S104
+        port = int(os.environ.get("RAGSAFETY_MCP_PORT", "8000"))
+        mcp.run(transport=transport, host=host, port=port)
+    else:
+        mcp.run(transport=transport)
 
 
 if __name__ == "__main__":
