@@ -48,17 +48,29 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mcp-url", default="http://localhost:8000")
     args = parser.parse_args()
+    import json
+
     settings = get_settings()
     plan = _plan(settings, args.mcp_url)
 
     if settings.mock_mode:
-        import json
-
         print("MOCK_MODE: would register the following Foundry agent + MCP tool:\n")
         print(json.dumps(plan, indent=2))
         return
 
-    register_agent_azure(settings, plan)  # pragma: no cover
+    # Real mode: the Foundry Agents SDK surface for creating an agent with an MCP
+    # tool is a # VERIFY item (azure-ai-projects changes often). Rather than fail
+    # the deploy pipeline, print the exact registration plan and leave agent
+    # registration as a documented manual step (Foundry portal) or a follow-up
+    # once register_agent_azure() is wired for your SDK version.
+    print("Foundry agent + MCP tool registration plan (apply manually in Foundry):\n")
+    print(json.dumps(plan, indent=2))
+    print(
+        "\nNOTE: automated registration is not yet wired (see register_agent_azure / "
+        "# VERIFY). The MCP Container App is deployed; register the agent + MCP tool "
+        "in the Foundry portal, or implement register_agent_azure for your "
+        "azure-ai-projects version, then re-run."
+    )
 
 
 def register_agent_azure(settings, plan) -> None:  # pragma: no cover - real-Azure only
