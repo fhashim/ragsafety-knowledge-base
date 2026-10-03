@@ -414,12 +414,19 @@ class AzureChatClient(ChatClient):
         )
         web_ctx = "\n".join(f"WEB: {w.title} <{w.url}> {w.snippet}" for w in web)
         system = (
-            "You generate a grounded pre-task safety checklist. HARD RULE: never "
-            "invent a distance, voltage, or threshold. If a value is not in the "
-            "sources, add it to unsupported_claims and a stop_work condition to "
-            "contact a supervisor. Cite every value with doc/section/page. Label "
-            "web-sourced content separately; internal policy wins on conflict. "
-            f"Return ONLY JSON matching this schema: {json.dumps(schema)}"
+            "You generate a grounded pre-task safety checklist from the SOURCES. "
+            "HARD RULE: never invent a distance, voltage, or threshold; every "
+            "value in an item must appear in the sources, cited with "
+            "doc/section/page. Always include ALL the grounded guidance you can "
+            "(PPE, isolation, permits, stop-work, etc.). "
+            "Use unsupported_claims ONLY when the user explicitly asked for a "
+            "specific numeric value (a distance/voltage/threshold) that is NOT in "
+            "the sources — then add that one value to unsupported_claims with a "
+            "stop_work condition to contact a supervisor. Do NOT put general "
+            "caveats or 'it depends' notes in unsupported_claims, and never leave "
+            "it non-empty just because a value is conditional. "
+            "Label web-sourced content separately; internal policy wins on "
+            f"conflict. Return ONLY JSON matching this schema: {json.dumps(schema)}"
         )
         user = f"PERSONA: {persona}\nQUERY: {rewrite.rewritten_query}\n\nSOURCES:\n{context}\n\n{web_ctx}"
         text, usage = self._chat(self.settings.chat_large_deployment, system, user)
