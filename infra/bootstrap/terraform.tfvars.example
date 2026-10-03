@@ -2,3 +2,6 @@ subscription_id = "00000000-0000-0000-0000-000000000000"
 github_org      = "your-org"
 github_repo     = "ragsafety-knowledge-base"
 location        = "eastus"
+
+# Only if the repo has use_immutable_subject enabled (gh api .../oidc/customization/sub):
+# github_subject_prefix = "repo:<org>@<orgId>/<repo>@<repoId>"

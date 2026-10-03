@@ -1,6 +1,14 @@
 data "azurerm_subscription" "current" {}
 data "azuread_client_config" "current" {}
 
+locals {
+  # OIDC subject prefix. GitHub's default is "repo:<org>/<repo>", but accounts
+  # with "use_immutable_subject" enabled present "repo:<org>@<orgId>/<repo>@<repoId>".
+  # When that is the case, set github_subject_prefix in tfvars to that exact
+  # prefix (read it from: gh api repos/<org>/<repo>/actions/oidc/customization/sub).
+  subject_prefix = coalesce(var.github_subject_prefix, "repo:${var.github_org}/${var.github_repo}")
+}
+
 resource "random_string" "suffix" {
   length  = 5
   special = false
@@ -58,7 +66,7 @@ resource "azuread_application_federated_identity_credential" "env" {
   display_name   = "github-${each.value}"
   issuer         = "https://token.actions.githubusercontent.com"
   audiences      = ["api://AzureADTokenExchange"]
-  subject        = "repo:${var.github_org}/${var.github_repo}:environment:${each.value}"
+  subject        = "${local.subject_prefix}:environment:${each.value}"
 }
 
 resource "azuread_application_federated_identity_credential" "pull_request" {
@@ -66,7 +74,7 @@ resource "azuread_application_federated_identity_credential" "pull_request" {
   display_name   = "github-pull-request"
   issuer         = "https://token.actions.githubusercontent.com"
   audiences      = ["api://AzureADTokenExchange"]
-  subject        = "repo:${var.github_org}/${var.github_repo}:pull_request"
+  subject        = "${local.subject_prefix}:pull_request"
 }
 
 # --- Entra groups for the two technician personas --------------------------
