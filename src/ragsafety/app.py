@@ -6,6 +6,7 @@ in-memory index), so ingest once and answer many times.
 
 from __future__ import annotations
 
+import json
 import logging
 from pathlib import Path
 
@@ -14,12 +15,21 @@ from .pipeline.chunk import chunk_document
 from .pipeline.embed_index import index_chunks
 from .pipeline.parse import parse_document
 from .schema import QueryResult
-from .settings import DATA_DIR, ChunkStrategy, RetrievalMode, Settings, get_settings
+from .settings import DATA_DIR, REPO_ROOT, ChunkStrategy, RetrievalMode, Settings, get_settings
 from .tracing import configure_tracing
 
 logger = logging.getLogger("ragsafety.app")
 
 RAW_DIR = DATA_DIR / "raw"
+MANIFEST = DATA_DIR / "manifest.json"
+
+
+def _manifest_meta() -> dict[str, dict]:
+    """Map repo-relative source path -> {doc, domain, allowed_groups} from manifest."""
+    if not MANIFEST.exists():
+        return {}
+    data = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    return {m["source"]: m for m in data}
 
 
 def discover_sources(raw_dir: Path = RAW_DIR) -> list[str]:
@@ -51,7 +61,22 @@ class RagSafetyApp:
                 f"No source documents in {RAW_DIR}. Run `python scripts/generate_data.py` first."
             )
         counts: dict[str, int] = {}
-        parsed_docs = [parse_document(self.clients, s) for s in sources]
+        meta = _manifest_meta()
+        parsed_docs = []
+        for s in sources:
+            parsed = parse_document(self.clients, s)
+            # Overlay per-document metadata from data/manifest.json. The mock
+            # layout sidecars already carry this, but the real Document
+            # Intelligence output does not know a document's domain or
+            # allowed_groups, so the manifest is the source of truth (and gives
+            # clean display names instead of file names).
+            rel = str(Path(s).resolve().relative_to(REPO_ROOT))
+            if rel in meta:
+                m = meta[rel]
+                parsed.doc = m.get("doc", parsed.doc)
+                parsed.domain = m.get("domain", parsed.domain)
+                parsed.allowed_groups = m.get("allowed_groups", parsed.allowed_groups)
+            parsed_docs.append(parsed)
         for strategy in strategies:
             total = 0
             for parsed in parsed_docs:

@@ -16,6 +16,7 @@ Search gives you — so the ablation is honest:
 from __future__ import annotations
 
 import math
+import re
 from collections import defaultdict
 from dataclasses import dataclass, field
 
@@ -23,6 +24,12 @@ from ..schema import Chunk, RetrievedChunk
 from ..settings import Settings
 from ..util import tokenize
 from .base import SearchClient
+
+
+def _safe_key(chunk_id: str) -> str:
+    """Azure Search document keys allow only [A-Za-z0-9_\\-=]; map the rest to '_'."""
+    return re.sub(r"[^A-Za-z0-9_\-=]", "_", chunk_id)
+
 
 _BM25_K1 = 1.5
 _BM25_B = 0.75
@@ -303,7 +310,11 @@ class AzureSearchClient(SearchClient):
         for c, v in zip(chunks, vectors, strict=False):
             docs.append(
                 {
-                    "chunk_id": c.chunk_id,
+                    # Azure Search keys allow only letters, digits, _, -, =.
+                    # Our chunk_id uses "::" and may embed spaces/dots (doc name),
+                    # so sanitize it for the key (the human-readable doc/section
+                    # live in their own fields).
+                    "chunk_id": _safe_key(c.chunk_id),
                     "text": c.text,
                     "doc": c.doc,
                     "section": c.section_display,
