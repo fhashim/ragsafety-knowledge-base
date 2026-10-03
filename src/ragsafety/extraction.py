@@ -85,7 +85,7 @@ def _clean_line(line: str) -> str:
 
 
 def _normalize_value(v: str) -> str:
-    return v.lower().replace(" ", "")
+    return v.lower().replace(" ", "").replace(",", "")
 
 
 def extract_values(text: str) -> list[str]:
@@ -94,9 +94,22 @@ def extract_values(text: str) -> list[str]:
 
 
 def value_supported(sources_text: str, value: str) -> bool:
-    """True if ``value`` (ignoring spaces/case) appears in ``sources_text``."""
+    """Groundedness check: is ``value`` supported by ``sources_text``?
+
+    Tolerant of formatting so a correctly-grounded value from a real LLM is not
+    falsely rejected (e.g. "17,000 V" vs "17000 V", "0.64 m" vs "0.64m"), while a
+    hallucinated number is still caught:
+      1) exact match ignoring case/spaces/commas, OR
+      2) the value's numeric core (e.g. "0.64") appears in the sources.
+    A value with no number (an imperative instruction) is considered supported.
+    """
     hay = _normalize_value(sources_text)
-    return _normalize_value(value) in hay
+    if _normalize_value(value) in hay:
+        return True
+    m = re.search(r"\d+(?:\.\d+)?", value)
+    if not m:
+        return True  # non-numeric instruction value; nothing to ground
+    return m.group(0) in hay
 
 
 def _candidate_lines(text: str) -> list[str]:

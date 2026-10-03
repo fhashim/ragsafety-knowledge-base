@@ -194,6 +194,32 @@ def _infer_domain(lower: str, equipment: str | None) -> Domain | None:
     return None
 
 
+def decide_clarification(rewrite: RewriteResult) -> ClarificationRequest:
+    """Deterministic clarification rule, shared by mock and Azure clients.
+
+    A request is answerable if it carries ANY concrete handle: a specific
+    equipment code, a voltage, or a recognizable safety concept (gloves, gas
+    detection, lifting, ...). A vague "what do I need for the X job?" with none of
+    these cannot be scoped safely, so we ask one question. Clarification is a
+    slot-completeness check, not a generative task, so it is not delegated to the
+    LLM (which judged it inconsistently — e.g. over-asking on gas queries).
+    """
+    slots = rewrite.slots
+    has_code = bool(slots.equipment and _CODE_RE.search(slots.equipment))
+    has_concept = bool(detect_concepts(rewrite.rewritten_query))
+    if has_code or slots.voltage or has_concept:
+        return ClarificationRequest(needed=False)
+    return ClarificationRequest(
+        needed=True,
+        missing_slots=["voltage", "task type", "equipment"],
+        question=(
+            "To give you a safe, specific checklist I need the voltage level "
+            "(e.g. 11 kV or 33 kV), the task (e.g. inspect, replace, isolate), "
+            "and the equipment ID if you have one."
+        ),
+    )
+
+
 class MockChatClient(ChatClient):
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
@@ -210,30 +236,14 @@ class MockChatClient(ChatClient):
         return RewriteResult(original_query=query, rewritten_query=normalized, slots=slots), usage
 
     def clarify(self, rewrite: RewriteResult) -> tuple[ClarificationRequest, TokenUsage]:
-        slots = rewrite.slots
-        # The request is answerable if it carries ANY concrete handle: a specific
-        # equipment code, a voltage, or a recognizable safety concept (gloves,
-        # gas detection, lifting, ...). A vague "what do I need for the X job?"
-        # with none of these cannot be scoped safely, so we ask one question.
-        has_code = bool(slots.equipment and _CODE_RE.search(slots.equipment))
-        has_concept = bool(detect_concepts(rewrite.rewritten_query))
-        needed = not (has_code or slots.voltage or has_concept)
-        missing: list[str] = []
-        question = ""
-        if needed:
-            missing = ["voltage", "task type", "equipment"]
-            question = (
-                "To give you a safe, specific checklist I need the voltage level "
-                "(e.g. 11 kV or 33 kV), the task (e.g. inspect, replace, isolate), "
-                "and the equipment ID if you have one."
-            )
+        req = decide_clarification(rewrite)
         usage = TokenUsage(
             model="mock-small",
             deployment=self.settings.chat_small_deployment,
             prompt_tokens=count_tokens(rewrite.rewritten_query),
-            completion_tokens=count_tokens(question),
+            completion_tokens=count_tokens(req.question),
         )
-        return ClarificationRequest(needed=needed, question=question, missing_slots=missing), usage
+        return req, usage
 
     def generate(
         self,
@@ -375,38 +385,26 @@ class AzureChatClient(ChatClient):
 
     def rewrite(self, query):  # pragma: no cover
         system = (
-            "You rewrite messy field-technician queries. Fix typos and shorthand, "
-            "expand acronyms, and extract slots. Return JSON with keys "
-            "rewritten_query, task, equipment, voltage, location, domain."
+            "You rewrite a messy field-technician query into one clear sentence: "
+            "fix typos and shorthand, expand acronyms, normalize equipment codes "
+            "(e.g. tx400 -> TX-400) and voltages (e.g. 11kv -> 11 kV). "
+            'Return JSON: {"rewritten_query": "<clean query>"}.'
         )
         text, usage = self._chat(self.settings.chat_small_deployment, system, query)
         data = _safe_json(text)
-        slots = Slots(
-            task=data.get("task"),
-            equipment=data.get("equipment"),
-            voltage=data.get("voltage"),
-            location=data.get("location"),
-            domain=data.get("domain"),
-        )
-        return RewriteResult(
-            original_query=query, rewritten_query=data.get("rewritten_query", query), slots=slots
-        ), usage
+        rewritten = data.get("rewritten_query") or query
+        # Derive slots deterministically from the rewritten text (valid enums,
+        # consistent with mock mode) rather than trusting free-text LLM fields.
+        slots = _extract_slots(rewritten, query)
+        return RewriteResult(original_query=query, rewritten_query=rewritten, slots=slots), usage
 
     def clarify(self, rewrite):  # pragma: no cover
-        system = (
-            "Decide if the task can be scoped safely. If equipment and voltage are "
-            "both unknown, ask ONE clarifying question. Return JSON: needed(bool), "
-            "question(str), missing_slots(list)."
+        # Deterministic (no model call): consistent with mock, and the LLM judged
+        # this inconsistently (over-asking on gas queries that have no voltage).
+        return decide_clarification(rewrite), TokenUsage(
+            model=self.settings.chat_small_deployment,
+            deployment=self.settings.chat_small_deployment,
         )
-        text, usage = self._chat(
-            self.settings.chat_small_deployment, system, rewrite.model_dump_json()
-        )
-        data = _safe_json(text)
-        return ClarificationRequest(
-            needed=bool(data.get("needed")),
-            question=data.get("question", ""),
-            missing_slots=data.get("missing_slots", []),
-        ), usage
 
     def generate(self, rewrite, retrieved, web, persona):  # pragma: no cover
         schema = Checklist.model_json_schema()
