@@ -62,6 +62,20 @@ class Settings(BaseSettings):
     # --- feature flags ---
     enable_bing_grounding: bool = False
 
+    # --- MCP client (used by the web explorer to call the deployed server) ---
+    # URL of the running MCP server, including the /mcp path. For the Azure
+    # Container App this is https://<app>.<region>.azurecontainerapps.io/mcp.
+    mcp_url: str = "http://127.0.0.1:8000/mcp"
+    # Static bearer token for the MCP endpoint (optional). If set it takes
+    # precedence over AAD token acquisition.
+    mcp_bearer_token: str = ""
+    # Entra ID scope to acquire an access token for via DefaultAzureCredential
+    # (e.g. "api://<app-client-id>/.default"). Used when no static token is set.
+    mcp_aad_scope: str = ""
+    # Extra headers as a JSON object string, e.g. '{"X-Functions-Key": "..."}'.
+    mcp_headers_json: str = ""
+    mcp_timeout_seconds: float = 60.0
+
     # --- active persona ---
     persona: str = "priya"
 

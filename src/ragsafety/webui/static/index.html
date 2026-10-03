@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>RAG Safety Explorer</title>
+<style>
+  :root {
+    --bg: #0f1419; --panel: #171d26; --panel-2: #1e2531; --border: #2a3340;
+    --fg: #e6edf3; --muted: #8b97a6; --accent: #4f9cf9; --accent-2: #2d6fd6;
+    --green: #3fb950; --yellow: #d29922; --red: #f85149; --chip: #243040;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f6f8fa; --panel: #fff; --panel-2: #f0f3f6; --border: #d9dee4;
+      --fg: #1c2128; --muted: #5a6572; --chip: #eaeef2;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 14px; }
+  header {
+    display: flex; align-items: center; gap: 12px; padding: 12px 20px;
+    border-bottom: 1px solid var(--border); background: var(--panel); position: sticky; top: 0; z-index: 10;
+  }
+  header h1 { font-size: 16px; margin: 0; font-weight: 600; }
+  header .sub { color: var(--muted); font-size: 12px; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--chip); color: var(--muted); border: 1px solid var(--border); }
+  .badge.ok { color: var(--green); border-color: var(--green); }
+  .badge.bad { color: var(--red); border-color: var(--red); }
+  #conn-bar:not(:empty) { padding: 8px 20px; font-size: 12px; border-bottom: 1px solid var(--border); font-family: var(--mono); }
+  #conn-bar.ok { background: rgba(63,185,80,.08); color: var(--muted); }
+  #conn-bar.bad { background: rgba(248,81,73,.1); color: var(--fg); }
+  #conn-bar code { background: var(--chip); padding: 1px 5px; border-radius: 4px; }
+  .layout { display: grid; grid-template-columns: 320px 1fr; gap: 16px; padding: 16px; align-items: start; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .panel h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 12px; }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 12px 0 4px; }
+  label:first-of-type { margin-top: 0; }
+  select, input, textarea {
+    width: 100%; background: var(--panel-2); color: var(--fg); border: 1px solid var(--border);
+    border-radius: 7px; padding: 8px 10px; font-size: 13px; font-family: var(--sans);
+  }
+  textarea { resize: vertical; min-height: 64px; font-family: var(--sans); }
+  .hint { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+  button.run {
+    width: 100%; margin-top: 16px; background: var(--accent); color: #fff; border: 0;
+    border-radius: 7px; padding: 10px; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  button.run:hover { background: var(--accent-2); }
+  button.run:disabled { opacity: .5; cursor: default; }
+  .docs { display: flex; flex-direction: column; gap: 6px; }
+  .doc {
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    padding: 7px 10px; border-radius: 7px; background: var(--panel-2); border: 1px solid var(--border); font-size: 12px;
+  }
+  .doc.locked { opacity: .45; }
+  .doc .name { font-weight: 500; }
+  .doc .meta { color: var(--muted); font-size: 11px; display: flex; gap: 4px; align-items: center; }
+  .pill { font-size: 10px; padding: 1px 6px; border-radius: 999px; background: var(--chip); border: 1px solid var(--border); color: var(--muted); }
+  .pill.ok { color: var(--green); border-color: var(--green); }
+  .pill.lock { color: var(--red); border-color: var(--red); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .chip { font-size: 11px; font-family: var(--mono); padding: 3px 9px; border-radius: 999px; background: var(--chip); border: 1px solid var(--border); }
+  .chip b { color: var(--accent); font-weight: 600; }
+  .outcome { font-weight: 700; padding: 3px 10px; border-radius: 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  .outcome.answered { background: rgba(63,185,80,.15); color: var(--green); }
+  .outcome.clarified { background: rgba(210,153,34,.15); color: var(--yellow); }
+  .outcome.refused, .outcome.blocked { background: rgba(248,81,73,.15); color: var(--red); }
+  .item { padding: 10px 0; border-top: 1px solid var(--border); }
+  .item:first-child { border-top: 0; }
+  .cat { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; padding: 2px 7px; border-radius: 999px; background: var(--chip); color: var(--accent); border: 1px solid var(--border); margin-right: 6px; }
+  .val { font-family: var(--mono); font-weight: 700; color: var(--green); }
+  .cite { font-size: 11px; color: var(--muted); font-family: var(--mono); margin-top: 3px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+  td.num { font-family: var(--mono); text-align: right; white-space: nowrap; }
+  .snippet { color: var(--muted); max-width: 420px; }
+  .stopwork { margin-top: 12px; padding: 10px 12px; border-radius: 8px; background: rgba(248,81,73,.1); border: 1px solid rgba(248,81,73,.3); }
+  .stopwork h3 { margin: 0 0 6px; font-size: 12px; color: var(--red); }
+  .audit { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border); display: flex; flex-wrap: wrap; gap: 6px; }
+  .empty { color: var(--muted); font-style: italic; padding: 20px 0; text-align: center; }
+  .error { color: var(--red); padding: 12px; background: rgba(248,81,73,.1); border: 1px solid rgba(248,81,73,.3); border-radius: 8px; }
+  details.raw { margin-top: 14px; }
+  details.raw summary { cursor: pointer; color: var(--muted); font-size: 12px; }
+  pre { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; overflow: auto; font-family: var(--mono); font-size: 11.5px; line-height: 1.5; }
+  .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; vertical-align: -2px; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<header>
+  <h1>RAG Safety Explorer</h1>
+  <span class="sub">MCP client · calls the server to generate output</span>
+  <span class="badge" id="conn-badge">connecting…</span>
+</header>
+<div id="conn-bar"></div>
+
+<div class="layout">
+  <!-- Controls + knowledge base -->
+  <div>
+    <div class="panel">
+      <h2>Request</h2>
+
+      <label for="persona">Caller (persona → groups)</label>
+      <select id="persona"></select>
+      <div class="hint" id="persona-hint"></div>
+
+      <label for="tool">MCP tool</label>
+      <select id="tool"></select>
+      <div class="hint" id="tool-hint"></div>
+
+      <div id="field-query">
+        <label for="query">Query</label>
+        <textarea id="query" placeholder="e.g. replacing a breaker on an 11 kV substation"></textarea>
+      </div>
+      <div id="field-doc" style="display:none">
+        <label for="doc">Document</label>
+        <input id="doc" placeholder="e.g. HV Substation Safety Policy" />
+        <label for="section">Section (optional)</label>
+        <input id="section" placeholder="e.g. Clearances" />
+      </div>
+      <div id="field-topk" style="display:none">
+        <label for="top_k">top_k</label>
+        <input id="top_k" type="number" min="1" max="20" value="5" />
+      </div>
+
+      <label for="strategy">Chunk strategy</label>
+      <select id="strategy"></select>
+      <div class="hint" id="strategy-hint"></div>
+
+      <label for="mode">Retrieval mode</label>
+      <select id="mode"></select>
+      <div class="hint" id="mode-hint"></div>
+
+      <button class="run" id="run">Run tool</button>
+    </div>
+
+    <div class="panel" style="margin-top:16px">
+      <h2>Knowledge base</h2>
+      <div class="docs" id="docs"></div>
+      <div class="hint" style="margin-top:10px">Dimmed documents are outside the selected caller's groups — they are filtered out <b>before</b> scoring, never shown to the model.</div>
+    </div>
+  </div>
+
+  <!-- Output -->
+  <div class="panel">
+    <h2>Output</h2>
+    <div id="output"><div class="empty">Choose a tool and run it to see the output.</div></div>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let CONFIG = null;
+
+function esc(s) { return String(s ?? "").replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+function renderConnection(c) {
+  const badge = $("conn-badge"), bar = $("conn-bar");
+  if (c && c.connected) {
+    badge.className = "badge ok"; badge.textContent = "● connected";
+    bar.className = "ok";
+    bar.innerHTML = `MCP server <code>${esc(c.url)}</code> · ${c.tools.length} tools: ${c.tools.map(t => `<code>${esc(t.name)}</code>`).join(" ")}`;
+    return true;
+  }
+  badge.className = "badge bad"; badge.textContent = "● disconnected";
+  bar.className = "bad";
+  bar.innerHTML = `Cannot reach MCP server <code>${esc(c ? c.url : "?")}</code>. ${c && c.error ? esc(c.error) : ""}<br>Start it with <code>make mcp</code> (local) or set <code>RAGSAFETY_MCP_URL</code> to the Azure Container App URL, then reload.`;
+  return false;
+}
+
+async function loadConfig() {
+  CONFIG = await (await fetch("/api/config")).json();
+  const connected = renderConnection(CONFIG.connection);
+  // Tools come live from the server; fall back to known field map.
+  const serverTools = (CONFIG.connection && CONFIG.connection.tools) || [];
+  const known = Object.keys(CONFIG.tool_fields);
+  const tools = (serverTools.length ? serverTools.map(t => t.name) : known).filter(n => CONFIG.tool_fields[n]);
+  TOOL_SUMMARY = {}; serverTools.forEach(t => TOOL_SUMMARY[t.name] = t.description || "");
+  $("tool").innerHTML = tools.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("");
+  // Personas
+  $("persona").innerHTML = CONFIG.personas.map(p => `<option value="${p.id}">${esc(p.display_name)}</option>`).join("");
+  $("persona").value = CONFIG.defaults.persona;
+  // Strategy / mode
+  $("strategy").innerHTML = CONFIG.strategies.map(s => `<option value="${s.id}">${s.id}</option>`).join("");
+  $("strategy").value = CONFIG.defaults.strategy;
+  $("mode").innerHTML = CONFIG.modes.map(m => `<option value="${m.id}">${m.id}</option>`).join("");
+  $("mode").value = CONFIG.defaults.mode;
+  $("top_k").value = CONFIG.defaults.top_k;
+  $("run").disabled = !connected;
+  if (!connected) $("run").textContent = "MCP server offline";
+  syncPersona(); syncTool(); syncStrategy(); syncMode(); renderDocs();
+}
+let TOOL_SUMMARY = {};
+
+function syncPersona() {
+  const p = CONFIG.personas.find(p => p.id === $("persona").value);
+  $("persona-hint").textContent = `${p.role} — groups: ${p.groups.join(", ")}`;
+  renderDocs();
+}
+function syncTool() {
+  const name = $("tool").value;
+  const f = CONFIG.tool_fields[name] || [];
+  $("tool-hint").textContent = TOOL_SUMMARY[name] || "";
+  $("field-query").style.display = f.includes("query") ? "" : "none";
+  $("field-doc").style.display = f.includes("doc") ? "" : "none";
+  $("field-topk").style.display = f.includes("top_k") ? "" : "none";
+}
+function syncStrategy() { $("strategy-hint").textContent = CONFIG.strategies.find(s => s.id === $("strategy").value).help; }
+function syncMode() { $("mode-hint").textContent = CONFIG.modes.find(m => m.id === $("mode").value).help; }
+
+function renderDocs() {
+  const groups = new Set(CONFIG.personas.find(p => p.id === $("persona").value).groups);
+  $("docs").innerHTML = CONFIG.documents.map(d => {
+    const visible = d.allowed_groups.some(g => groups.has(g));
+    return `<div class="doc ${visible ? "" : "locked"}">
+      <span class="name">${esc(d.doc)}</span>
+      <span class="meta">
+        <span class="pill">${esc(d.domain)}</span>
+        <span class="pill ${visible ? "ok" : "lock"}">${visible ? "visible" : "restricted"}</span>
+      </span></div>`;
+  }).join("");
+}
+
+["persona","tool","strategy","mode"].forEach(id => $(id).addEventListener("change", {
+  persona: syncPersona, tool: syncTool, strategy: syncStrategy, mode: syncMode
+}[id]));
+
+async function run() {
+  const body = {
+    tool: $("tool").value, persona: $("persona").value,
+    strategy: $("strategy").value, mode: $("mode").value,
+    query: $("query").value, doc: $("doc").value, section: $("section").value,
+    top_k: Number($("top_k").value) || 5,
+  };
+  $("run").disabled = true;
+  $("run").innerHTML = '<span class="spinner"></span>Running…';
+  try {
+    const res = await fetch("/api/invoke", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(body) });
+    const data = await res.json();
+    if (!res.ok) { $("output").innerHTML = `<div class="error">${esc(data.error || "request failed")}</div>`; return; }
+    renderOutput(data);
+  } catch (e) {
+    $("output").innerHTML = `<div class="error">${esc(e.message)}</div>`;
+  } finally {
+    $("run").disabled = false; $("run").textContent = "Run tool";
+  }
+}
+$("run").addEventListener("click", run);
+
+function chips(data) {
+  const e = data.effective;
+  return `<div class="chips">
+    <span class="chip">via MCP <b>${esc(data.source || "")}</b></span>
+    <span class="chip">tool <b>${esc(data.tool)}</b></span>
+    <span class="chip">persona <b>${esc(data.identity.persona)}</b></span>
+    <span class="chip">groups <b>${esc((data.identity.groups||[]).join(","))}</b></span>
+    <span class="chip">strategy <b>${esc(e.strategy)}</b></span>
+    <span class="chip">mode <b>${esc(e.mode)}</b></span>
+    <span class="chip">${data.elapsed_ms} ms</span>
+  </div>`;
+}
+
+function renderOutput(data) {
+  let html = chips(data);
+  const r = data.result;
+  if (data.tool === "get_safety_checklist") html += renderChecklist(r);
+  else if (data.tool === "search_policies") html += renderChunks(Array.isArray(r) ? r : (r.chunks || []), "No chunks visible to this caller for that query.");
+  else if (data.tool === "get_document_section") html += renderSection(r);
+  html += `<details class="raw"><summary>Raw JSON response</summary><pre>${esc(JSON.stringify(data, null, 2))}</pre></details>`;
+  $("output").innerHTML = html;
+}
+
+function renderChecklist(r) {
+  let h = `<p><span class="outcome ${r.outcome}">${r.outcome}</span></p>`;
+  if (r.outcome === "answered" && r.checklist) {
+    const c = r.checklist;
+    const meta = [c.task, c.equipment, c.location].filter(Boolean).join(" · ");
+    if (meta) h += `<p style="color:var(--muted)">${esc(meta)}</p>`;
+    h += (c.items || []).map(it => {
+      const cites = (it.citations || []).map(ci => `${ci.doc} p${ci.page}${ci.section && ci.section !== "(root)" ? " · " + ci.section : ""}`).join("; ");
+      return `<div class="item"><div><span class="cat">${esc(it.category)}</span>${esc(it.instruction)}${it.value ? ` <span class="val">${esc(it.value)}</span>` : ""}</div>${cites ? `<div class="cite">source: ${esc(cites)}</div>` : ""}</div>`;
+    }).join("");
+    if (c.web_sources && c.web_sources.length)
+      h += `<div class="stopwork" style="background:rgba(79,156,249,.1);border-color:rgba(79,156,249,.3)"><h3 style="color:var(--accent)">Web sources (labeled separately)</h3>${c.web_sources.map(w => `<div class="cite">${esc(w.doc)} &lt;${esc(w.url||"")}&gt;</div>`).join("")}</div>`;
+    if (c.unsupported_claims && c.unsupported_claims.length)
+      h += `<div class="stopwork"><h3>Unsupported claims (not grounded)</h3>${c.unsupported_claims.map(s => `<div class="cite">${esc(s)}</div>`).join("")}</div>`;
+    if (c.stop_work_conditions && c.stop_work_conditions.length)
+      h += `<div class="stopwork"><h3>Stop-work conditions</h3>${c.stop_work_conditions.map(s => `<div class="cite">‣ ${esc(s)}</div>`).join("")}</div>`;
+  } else if (r.outcome === "clarified" && r.clarification) {
+    h += `<p><b>Clarifying question:</b> ${esc(r.clarification.question)}</p>`;
+    if (r.clarification.missing_slots?.length) h += `<p class="cite">missing: ${esc(r.clarification.missing_slots.join(", "))}</p>`;
+  } else {
+    h += `<p style="color:var(--muted)">${esc(r.message || "")}</p>`;
+  }
+  if (r.audit) {
+    const a = r.audit;
+    h += `<div class="audit">
+      <span class="chip">trace <b>${esc((r.trace_id||"").slice(0,8))}</b></span>
+      <span class="chip">tokens in <b>${a.tokens_in}</b></span>
+      <span class="chip">tokens out <b>${a.tokens_out}</b></span>
+      <span class="chip">cost <b>$${a.cost_usd}</b></span>
+      <span class="chip">latency <b>${a.latency_ms} ms</b></span>
+      <span class="chip">guard in <b>${a.guardrail_in_allowed ? "✓" : "✗"}</b></span>
+      <span class="chip">guard out <b>${a.guardrail_out_allowed ? "✓" : "✗"}</b></span>
+    </div>`;
+    if (a.retrieved_chunk_ids?.length)
+      h += `<div class="cite" style="margin-top:8px">retrieved: ${a.retrieved_chunk_ids.map(esc).join(", ")}</div>`;
+  }
+  return h;
+}
+
+function renderChunks(chunks, emptyMsg) {
+  if (!chunks || !chunks.length) return `<div class="empty">${esc(emptyMsg)}</div>`;
+  return `<table><thead><tr><th>Doc</th><th>Section</th><th>Pg</th><th>Type</th><th class="num">Score</th><th>Snippet</th></tr></thead><tbody>${
+    chunks.map(c => `<tr>
+      <td>${esc(c.doc ?? "")}</td>
+      <td>${esc(c.section ?? "")}</td>
+      <td class="num">${c.page ?? ""}</td>
+      <td>${esc(c.content_type ?? "")}</td>
+      <td class="num">${c.score ?? "—"}</td>
+      <td class="snippet">${esc(c.snippet ?? c.text ?? "")}</td>
+    </tr>`).join("")
+  }</tbody></table>`;
+}
+
+function renderSection(r) {
+  const head = `<p><span class="outcome ${r.found ? "answered" : "refused"}">${r.found ? "found" : "not found / not authorized"}</span> <span style="color:var(--muted)">${esc(r.doc)}${r.section ? " · " + esc(r.section) : ""}</span></p>`;
+  if (!r.found) return head + `<div class="empty">No authorized passages. (A restricted document is never revealed to exist.)</div>`;
+  return head + (r.passages || []).map(p => `
+    <div class="item">
+      <div><span class="cat">p${p.page ?? "?"}</span>${esc(p.section ?? "")}</div>
+      <div class="snippet" style="margin-top:6px; white-space:pre-wrap">${esc(p.text ?? "")}</div>
+    </div>`).join("");
+}
+
+loadConfig();
+</script>
+</body>
+</html>

@@ -48,10 +48,19 @@ def build_server():
 
     @mcp.tool()
     def get_safety_checklist(
-        query: str, persona: str | None = None, groups: list[str] | None = None
+        query: str,
+        persona: str | None = None,
+        groups: list[str] | None = None,
+        strategy: str | None = None,
+        mode: str | None = None,
     ) -> dict:
-        """Grounded, cited pre-task safety checklist for a described maintenance task."""
-        return get_safety_checklist_impl(app, ident(persona, groups), query)
+        """Grounded, cited pre-task safety checklist for a described maintenance task.
+
+        ``strategy`` (fixed_no_overlap|fixed_overlap|section_aware) and ``mode``
+        (vector|bm25|hybrid|hybrid_rerank) are optional ablation overrides; when
+        omitted the server's configured defaults are used.
+        """
+        return get_safety_checklist_impl(app, ident(persona, groups), query, strategy, mode)
 
     @mcp.tool()
     def search_policies(
@@ -59,9 +68,15 @@ def build_server():
         persona: str | None = None,
         groups: list[str] | None = None,
         top_k: int = 5,
+        strategy: str | None = None,
+        mode: str | None = None,
     ) -> list[dict]:
-        """Search internal safety policies, security-trimmed to the caller's groups."""
-        return search_policies_impl(app, ident(persona, groups), query, top_k)
+        """Search internal safety policies, security-trimmed to the caller's groups.
+
+        ``strategy`` and ``mode`` are optional ablation overrides (see
+        ``get_safety_checklist``).
+        """
+        return search_policies_impl(app, ident(persona, groups), query, top_k, strategy, mode)
 
     @mcp.tool()
     def get_document_section(
@@ -69,9 +84,17 @@ def build_server():
         section: str = "",
         persona: str | None = None,
         groups: list[str] | None = None,
+        strategy: str | None = None,
+        mode: str | None = None,
     ) -> dict:
-        """Fetch a named document section the caller is authorized to read."""
-        return get_document_section_impl(app, ident(persona, groups), doc, section)
+        """Fetch a named document section the caller is authorized to read.
+
+        ``strategy`` and ``mode`` are optional ablation overrides (see
+        ``get_safety_checklist``).
+        """
+        return get_document_section_impl(
+            app, ident(persona, groups), doc, section, strategy, mode
+        )
 
     return mcp
 
