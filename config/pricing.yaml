@@ -11,6 +11,13 @@ as_of: "2026-10-03"           # when these placeholders were entered
 verify: true                  # surfaces a "prices unverified" warning in reports
 
 models:
+  # Current chat tiers used by the platform defaults.
+  gpt-4.1:
+    prompt_per_1k: 0.0020
+    completion_per_1k: 0.0080
+  gpt-4.1-mini:
+    prompt_per_1k: 0.00040
+    completion_per_1k: 0.00160
   gpt-4o:
     prompt_per_1k: 0.0025
     completion_per_1k: 0.0100

@@ -55,9 +55,16 @@ variable "deployments" {
     capacity      = number
   }))
   default = {
-    # VERIFY: model versions and regional availability/quota before apply.
-    small = { name = "gpt-4o-mini", model_format = "OpenAI", model_name = "gpt-4o-mini", model_version = "2024-07-18", sku_name = "GlobalStandard", capacity = 20 }
-    large = { name = "gpt-4o", model_format = "OpenAI", model_name = "gpt-4o", model_version = "2024-11-20", sku_name = "GlobalStandard", capacity = 20 }
+    # VERIFY: model versions, regional availability and quota before apply.
+    # gpt-4o-mini:2024-07-18 is now blocked for NEW deployments
+    # (ServiceModelDeprecating), so the chat tiers use the current, stable
+    # gpt-4.1 family (standard chat models that support the temperature param;
+    # the o-series / gpt-5 reasoning models do not). List what your account can
+    # deploy with:
+    #   az cognitiveservices account list-models -g <rg> -n <foundry> \
+    #     --query "[?format=='OpenAI'].{name:name,version:version}" -o table
+    small = { name = "gpt-4.1-mini", model_format = "OpenAI", model_name = "gpt-4.1-mini", model_version = "2025-04-14", sku_name = "GlobalStandard", capacity = 20 }
+    large = { name = "gpt-4.1", model_format = "OpenAI", model_name = "gpt-4.1", model_version = "2025-04-14", sku_name = "GlobalStandard", capacity = 20 }
     embed = { name = "text-embedding-3-large", model_format = "OpenAI", model_name = "text-embedding-3-large", model_version = "1", sku_name = "Standard", capacity = 50 }
   }
 }

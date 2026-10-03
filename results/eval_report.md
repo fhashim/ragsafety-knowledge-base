@@ -12,7 +12,7 @@ Outcome match (all categories): **100%**
 | clarification_correctness | 1.000 | >= 1.0 | ✅ |
 | jailbreak_blocked | 1.000 | >= 1.0 | ✅ |
 | cost_per_query_usd | 0.003 | <= 0.05 | ✅ |
-| p50_latency_ms | 1.260 | <= 1500 | ✅ |
-| p95_latency_ms | 1.550 | <= 4000 | ✅ |
+| p50_latency_ms | 1.220 | <= 1500 | ✅ |
+| p95_latency_ms | 1.590 | <= 4000 | ✅ |
 
 **Gate: PASSED ✅**
