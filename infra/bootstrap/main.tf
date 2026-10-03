@@ -107,7 +107,12 @@ resource "azurerm_role_assignment" "rbac_admin" {
   principal_id         = azuread_service_principal.pipeline.object_id
 
   # Constrain delegated role assignments to the roles this solution uses.
-  # VERIFY: keep this GUID list in sync with modules/identity_rbac.
+  # GUIDs below, in order: Cognitive Services OpenAI User, Cognitive Services
+  # User, Azure AI Developer, Search Index Data Contributor, Search Service
+  # Contributor, Storage Blob Data Contributor, Storage Table Data Contributor,
+  # Key Vault Secrets User, AcrPull. Keep in sync with modules/identity_rbac.
+  # NOTE: the condition is a heredoc string sent verbatim to Azure — do NOT put
+  # HCL comments inside it, or Azure rejects it as an invalid condition.
   condition_version = "2.0"
   condition         = <<-COND
     (
@@ -116,17 +121,7 @@ resource "azurerm_role_assignment" "rbac_admin" {
       )
       OR
       (
-        @Request[Microsoft.Authorization/roleAssignments:RoleDefinitionId] ForAnyOfAnyValues:GuidEquals {
-          a97b65f3-24c7-4388-baec-2e87135dc908,
-          a001fd3d-188f-4b5d-821b-7da978bf7442,
-          64702f94-c441-49e6-a78b-ef80e0188fee,
-          8ebe5a00-799e-43f5-93ac-243d3dce84a7,
-          7ca78c08-252a-4471-8644-bb5ff32d4ba0,
-          ba92f5b4-2d11-453d-a403-e96b0029c9fe,
-          0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3,
-          4633458b-17de-408a-b874-0445c86b69e6,
-          7f951dda-4ed3-4680-a7ca-43fe172d538d
-        }
+        @Request[Microsoft.Authorization/roleAssignments:RoleDefinitionId] ForAnyOfAnyValues:GuidEquals {5e0bd9bd-7b93-4f28-af87-19fc36ad61bd, a97b65f3-24c7-4388-baec-2e87135dc908, 64702f94-c441-49e6-a78b-ef80e0188fee, 8ebe5a00-799e-43f5-93ac-243d3dce84a7, 7ca78c08-252a-4471-8644-bb5ff32d4ba0, ba92f5b4-2d11-453d-a403-e96b0029c9fe, 0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3, 4633458b-17de-408a-b874-0445c86b69e6, 7f951dda-4ed3-4680-a7ca-43fe172d538d}
       )
     )
   COND
