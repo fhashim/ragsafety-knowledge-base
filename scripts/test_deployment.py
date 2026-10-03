@@ -66,8 +66,16 @@ CASES = [
 ]
 
 
-def _payload(res) -> dict:
-    """MCP returns the tool's dict as JSON text in the first content block."""
+def _payload(res):
+    """Extract a tool's return value (dict or list) from an MCP CallToolResult.
+
+    mcp wraps structured output as ``structured_content`` (a dict returned as-is;
+    a list wrapped as ``{"result": [...]}``). Fall back to the JSON in the first
+    text content block.
+    """
+    sc = getattr(res, "structured_content", None)
+    if isinstance(sc, dict):
+        return sc["result"] if set(sc.keys()) == {"result"} else sc
     for block in (res.content or []):
         text = getattr(block, "text", None)
         if text:
@@ -111,10 +119,6 @@ async def run(url: str) -> None:
             try:
                 res = await client.call_tool(tool, args)
                 data = _payload(res)
-                # list_tools returns a wrapper; call_tool structured dicts come
-                # back as text — search_policies returns a JSON list string.
-                if isinstance(data, dict) and "_list" in data:
-                    data = data["_list"]
                 summary = _summarize(tool, data)
                 flag = ""
                 if expected and tool == "get_safety_checklist":
