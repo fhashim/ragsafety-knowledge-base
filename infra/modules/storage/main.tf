@@ -32,7 +32,16 @@ resource "azurerm_storage_container" "audit_raw" {
   container_access_type = "private"
 }
 
-resource "azurerm_storage_table" "ragaudit" {
-  name                 = "ragaudit"
-  storage_account_name = azurerm_storage_account.this.name
+# The ragaudit table is created via ARM (azapi), NOT the azurerm data-plane
+# resource: shared keys are disabled on this account, so the data-plane Tables
+# client cannot authenticate (403 KeyBasedAuthenticationNotPermitted). The ARM
+# control-plane path is covered by the deployer's Contributor role. Runtime data
+# access uses the managed identity's Storage Table Data Contributor role.
+# (Blob containers above use the azurerm resources, which already go via ARM.)
+resource "azapi_resource" "ragaudit" {
+  type                      = "Microsoft.Storage/storageAccounts/tableServices/tables@2023-05-01"
+  name                      = "ragaudit"
+  parent_id                 = "${azurerm_storage_account.this.id}/tableServices/default"
+  schema_validation_enabled = false
+  body                      = {}
 }

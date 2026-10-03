@@ -6,6 +6,11 @@ on:
     paths:
       - "infra/**"
   workflow_dispatch:
+    inputs:
+      deploy_prod:
+        description: "Also apply to prod (requires prod environment approval)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -85,6 +90,11 @@ jobs:
   apply-prod:
     name: apply (prod)
     needs: apply-dev
+    # Prod NEVER deploys automatically. It runs only on a manual dispatch that
+    # explicitly opts in (deploy_prod=true), AND still waits on the prod
+    # environment's required-reviewer approval. This is defense in depth: prod is
+    # not gated by the approval rule alone.
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.deploy_prod }}
     runs-on: ubuntu-latest
     environment: prod
     concurrency:

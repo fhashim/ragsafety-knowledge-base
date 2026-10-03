@@ -4,4 +4,4 @@ location              = "eastus"
 unique                = "01"
 owner                 = "field-safety-team"
 cost_center           = "field-safety"
-enable_bing_grounding = true
+enable_bing_grounding = false

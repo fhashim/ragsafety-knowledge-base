@@ -59,23 +59,67 @@ resource "azapi_resource" "project" {
 
 # Model deployments (small chat, large chat, embeddings). API 2023-05-01 is the
 # stable deployments API used by the Microsoft Learn sample.
-resource "azapi_resource" "deployment" {
-  for_each                  = var.deployments
+#
+# Cognitive Services serializes control-plane operations on an account: creating
+# deployments in parallel returns 409 "Another operation is in progress on the
+# resource". We therefore chain them (project -> small -> large -> embed) with
+# depends_on so they are created one at a time.
+locals {
+  dep = var.deployments
+}
+
+resource "azapi_resource" "deployment_small" {
   type                      = "Microsoft.CognitiveServices/accounts/deployments@2023-05-01"
-  name                      = each.value.name
+  name                      = local.dep["small"].name
   parent_id                 = azapi_resource.account.id
   schema_validation_enabled = false
+  depends_on                = [azapi_resource.project]
 
   body = {
-    sku = {
-      name     = each.value.sku_name
-      capacity = each.value.capacity
-    }
+    sku = { name = local.dep["small"].sku_name, capacity = local.dep["small"].capacity }
     properties = {
       model = {
-        format  = each.value.model_format
-        name    = each.value.model_name
-        version = each.value.model_version
+        format  = local.dep["small"].model_format
+        name    = local.dep["small"].model_name
+        version = local.dep["small"].model_version
+      }
+    }
+  }
+}
+
+resource "azapi_resource" "deployment_large" {
+  type                      = "Microsoft.CognitiveServices/accounts/deployments@2023-05-01"
+  name                      = local.dep["large"].name
+  parent_id                 = azapi_resource.account.id
+  schema_validation_enabled = false
+  depends_on                = [azapi_resource.deployment_small]
+
+  body = {
+    sku = { name = local.dep["large"].sku_name, capacity = local.dep["large"].capacity }
+    properties = {
+      model = {
+        format  = local.dep["large"].model_format
+        name    = local.dep["large"].model_name
+        version = local.dep["large"].model_version
+      }
+    }
+  }
+}
+
+resource "azapi_resource" "deployment_embed" {
+  type                      = "Microsoft.CognitiveServices/accounts/deployments@2023-05-01"
+  name                      = local.dep["embed"].name
+  parent_id                 = azapi_resource.account.id
+  schema_validation_enabled = false
+  depends_on                = [azapi_resource.deployment_large]
+
+  body = {
+    sku = { name = local.dep["embed"].sku_name, capacity = local.dep["embed"].capacity }
+    properties = {
+      model = {
+        format  = local.dep["embed"].model_format
+        name    = local.dep["embed"].model_name
+        version = local.dep["embed"].model_version
       }
     }
   }

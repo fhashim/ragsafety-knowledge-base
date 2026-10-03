@@ -1,6 +1,14 @@
 data "azurerm_subscription" "current" {}
 data "azuread_client_config" "current" {}
 
+locals {
+  # OIDC subject prefix. GitHub's default is "repo:<org>/<repo>", but accounts
+  # with "use_immutable_subject" enabled present "repo:<org>@<orgId>/<repo>@<repoId>".
+  # When that is the case, set github_subject_prefix in tfvars to that exact
+  # prefix (read it from: gh api repos/<org>/<repo>/actions/oidc/customization/sub).
+  subject_prefix = coalesce(var.github_subject_prefix, "repo:${var.github_org}/${var.github_repo}")
+}
+
 resource "random_string" "suffix" {
   length  = 5
   special = false
@@ -58,7 +66,7 @@ resource "azuread_application_federated_identity_credential" "env" {
   display_name   = "github-${each.value}"
   issuer         = "https://token.actions.githubusercontent.com"
   audiences      = ["api://AzureADTokenExchange"]
-  subject        = "repo:${var.github_org}/${var.github_repo}:environment:${each.value}"
+  subject        = "${local.subject_prefix}:environment:${each.value}"
 }
 
 resource "azuread_application_federated_identity_credential" "pull_request" {
@@ -66,7 +74,7 @@ resource "azuread_application_federated_identity_credential" "pull_request" {
   display_name   = "github-pull-request"
   issuer         = "https://token.actions.githubusercontent.com"
   audiences      = ["api://AzureADTokenExchange"]
-  subject        = "repo:${var.github_org}/${var.github_repo}:pull_request"
+  subject        = "${local.subject_prefix}:pull_request"
 }
 
 # --- Entra groups for the two technician personas --------------------------
@@ -99,7 +107,12 @@ resource "azurerm_role_assignment" "rbac_admin" {
   principal_id         = azuread_service_principal.pipeline.object_id
 
   # Constrain delegated role assignments to the roles this solution uses.
-  # VERIFY: keep this GUID list in sync with modules/identity_rbac.
+  # GUIDs below, in order: Cognitive Services OpenAI User, Cognitive Services
+  # User, Azure AI Developer, Search Index Data Contributor, Search Service
+  # Contributor, Storage Blob Data Contributor, Storage Table Data Contributor,
+  # Key Vault Secrets User, AcrPull. Keep in sync with modules/identity_rbac.
+  # NOTE: the condition is a heredoc string sent verbatim to Azure — do NOT put
+  # HCL comments inside it, or Azure rejects it as an invalid condition.
   condition_version = "2.0"
   condition         = <<-COND
     (
@@ -108,17 +121,7 @@ resource "azurerm_role_assignment" "rbac_admin" {
       )
       OR
       (
-        @Request[Microsoft.Authorization/roleAssignments:RoleDefinitionId] ForAnyOfAnyValues:GuidEquals {
-          a97b65f3-24c7-4388-baec-2e87135dc908,
-          a001fd3d-188f-4b5d-821b-7da978bf7442,
-          64702f94-c441-49e6-a78b-ef80e0188fee,
-          8ebe5a00-799e-43f5-93ac-243d3dce84a7,
-          7ca78c08-252a-4471-8644-bb5ff32d4ba0,
-          ba92f5b4-2d11-453d-a403-e96b0029c9fe,
-          0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3,
-          4633458b-17de-408a-b874-0445c86b69e6,
-          7f951dda-4ed3-4680-a7ca-43fe172d538d
-        }
+        @Request[Microsoft.Authorization/roleAssignments:RoleDefinitionId] ForAnyOfAnyValues:GuidEquals {5e0bd9bd-7b93-4f28-af87-19fc36ad61bd, a97b65f3-24c7-4388-baec-2e87135dc908, 64702f94-c441-49e6-a78b-ef80e0188fee, 8ebe5a00-799e-43f5-93ac-243d3dce84a7, 7ca78c08-252a-4471-8644-bb5ff32d4ba0, ba92f5b4-2d11-453d-a403-e96b0029c9fe, 0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3, 4633458b-17de-408a-b874-0445c86b69e6, 7f951dda-4ed3-4680-a7ca-43fe172d538d}
       )
     )
   COND

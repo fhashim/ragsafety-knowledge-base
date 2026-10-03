@@ -25,7 +25,7 @@ def cost_usd(usage: TokenUsage) -> float:
     """USD cost for one call. Uses the model name, falling back to deployment."""
     key = usage.model or usage.deployment
     # Mock usage records "mock-small"/"mock-large"; map them to configured models.
-    alias = {"mock-small": "gpt-4o-mini", "mock-large": "gpt-4o"}
+    alias = {"mock-small": "gpt-4.1-mini", "mock-large": "gpt-4.1"}
     prices = _model_prices(alias.get(key, key))
     cost = 0.0
     cost += (usage.prompt_tokens / 1000.0) * prices.get("prompt_per_1k", 0.0)
