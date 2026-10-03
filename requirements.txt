@@ -1,0 +1,29 @@
+# Runtime dependencies. Versions verified on PyPI 2026-10-03.
+# Azure SDK imports are lazy/guarded in code so MOCK_MODE needs none of the
+# azure-* packages at runtime; they are listed here for the real-Azure path.
+
+# --- Core (needed in mock mode too) ---
+pydantic==2.13.5
+pydantic-settings==2.15.0
+pyyaml==6.0.3
+reportlab==5.0.1          # synthetic PDF generation
+Pillow==12.3.0            # synthetic PNG / OCR poster
+# Pinned to 1.44.x to satisfy azure-monitor-opentelemetry 1.8.10 (sdk~=1.44.0).
+opentelemetry-api==1.44.0
+opentelemetry-sdk==1.44.0
+opentelemetry-semantic-conventions==0.65b0
+
+# --- Azure (real mode only; safe to install, imported lazily) ---
+azure-identity==1.26.0
+azure-search-documents==12.0.0        # VERIFY: confirm API shape for this major
+azure-ai-documentintelligence==1.0.2
+azure-ai-contentsafety==1.0.0
+azure-ai-projects==2.7.0              # Foundry agents + MCP tool registration
+azure-ai-inference==1.0.0b9          # VERIFY: beta; used for Foundry-hosted chat/embeddings
+azure-data-tables==12.7.0
+azure-storage-blob==12.31.0
+azure-monitor-opentelemetry==1.8.10
+openai==3.24.0                        # VERIFY: Azure OpenAI client surface for 3.x
+
+# --- MCP server ---
+mcp==2.3.0

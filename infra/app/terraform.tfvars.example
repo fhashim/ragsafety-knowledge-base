@@ -1,0 +1,7 @@
+subscription_id       = "00000000-0000-0000-0000-000000000000"
+env                   = "dev"
+image_tag             = "latest"            # CI passes the commit SHA
+state_resource_group  = "rg-ragsafety-tfstate"
+state_storage_account = "stragsafetytfstateXXXXX"
+state_container       = "tfstate"
+platform_state_key    = "dev/platform.tfstate"

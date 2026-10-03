@@ -1,0 +1,14 @@
+{
+  "doc": "Lifting and Rigging Poster",
+  "domain": "shared",
+  "allowed_groups": [
+    "grp-all"
+  ],
+  "blocks": [
+    {
+      "kind": "ocr",
+      "page": 1,
+      "text": "LIFTING AND RIGGING SAFETY\nNever stand or walk under a suspended load.\nInspect slings and shackles before every lift.\nKnow the load weight and the sling Working Load Limit.\nUse a tag line to control the load.\nSling angle factor table:\n| Sling Angle | Capacity Factor |\n| 90 degrees | 1.00 |\n| 60 degrees | 0.87 |\n| 45 degrees | 0.71 |\n| 30 degrees | 0.50 |\nIf in doubt about the lift plan, stop work and contact your supervisor."
+    }
+  ]
+}

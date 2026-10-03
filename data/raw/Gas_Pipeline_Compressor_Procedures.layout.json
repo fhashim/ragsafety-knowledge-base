@@ -1,0 +1,58 @@
+{
+  "doc": "Gas Pipeline Compressor Procedures",
+  "domain": "gas",
+  "allowed_groups": [
+    "grp-gas"
+  ],
+  "blocks": [
+    {
+      "kind": "heading",
+      "text": "Gas Pipeline Compressor Procedures",
+      "page": 1,
+      "level": 1
+    },
+    {
+      "kind": "paragraph",
+      "page": 1,
+      "text": "Procedures for work on gas pipeline compressor stations, including compressor CS-3 and isolation valve GV-17. All hot work requires a hot-work permit."
+    },
+    {
+      "kind": "heading",
+      "text": "1. Gas Detection Thresholds",
+      "page": 1,
+      "level": 2
+    },
+    {
+      "kind": "paragraph",
+      "page": 1,
+      "text": "Continuously monitor for flammable gas with a calibrated detector. Alarm thresholds are expressed as a percentage of the lower explosive limit (%LEL)."
+    },
+    {
+      "kind": "table",
+      "page": 1,
+      "text": "| Level | Threshold | Action |\n| --- | --- | --- |\n| Low alarm | 10 %LEL | Investigate and ventilate |\n| High alarm | 20 %LEL | Stop work, evacuate the exclusion zone |\n| Trip | 40 %LEL | Automatic compressor shutdown |"
+    },
+    {
+      "kind": "heading",
+      "text": "2. Exclusion Zones",
+      "page": 1,
+      "level": 2
+    },
+    {
+      "kind": "paragraph",
+      "page": 1,
+      "text": "Establish an exclusion zone around the work. For compressor CS-3 the exclusion-zone radius is 15 m during venting. For valve GV-17 operations the exclusion-zone radius is 8 m."
+    },
+    {
+      "kind": "heading",
+      "text": "3. Hot-Work Permit Process",
+      "page": 2,
+      "level": 2
+    },
+    {
+      "kind": "paragraph",
+      "page": 2,
+      "text": "Obtain a hot-work permit before welding, grinding or any ignition source. Test the atmosphere, confirm it is below 10 %LEL, post a fire watch, and keep the permit on site. If gas is detected above 20 %LEL, stop work and contact your supervisor."
+    }
+  ]
+}

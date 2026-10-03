@@ -1,0 +1,45 @@
+# Checkov configuration + DOCUMENTED suppressions.
+#
+# Run:  checkov -d infra --config-file infra/.checkov.yaml --hard-fail-on HIGH
+#
+# Every skip below is a deliberate SCOPE decision for a teaching PROTOTYPE, not a
+# recommendation for production. Each category is listed in the root README under
+# "Known limitations". For a production deployment you would instead: add private
+# endpoints + disable public network access, enable customer-managed keys (CMK),
+# use GRS/ZRS replication, and turn on storage analytics logging.
+#
+# The gate still fails on anything NOT listed here (e.g. if someone re-enables
+# shared storage keys, local auth, or public blob access), so real regressions
+# are caught.
+
+compact: true
+quiet: true
+
+skip-check:
+  # --- Network isolation (no private endpoints; public access is restricted by
+  #     Entra-ID-only data planes, but endpoints remain public in the prototype) ---
+  - CKV2_AZURE_32   # private endpoint for Key Vault
+  - CKV2_AZURE_33   # private endpoint for Storage
+  - CKV_AZURE_109   # Key Vault public network access
+  - CKV_AZURE_59    # Storage public access
+  - CKV_AZURE_206   # Storage replication (we use LRS for cost)
+  # --- Customer-managed keys (platform-managed keys used in the prototype) ---
+  - CKV2_AZURE_1    # Storage CMK
+  - CKV2_AZURE_22   # Cognitive Services CMK
+  - CKV_AZURE_233   # ACR CMK / zone redundancy
+  # --- Storage analytics logging (not wired for the prototype) ---
+  - CKV2_AZURE_20   # Table service read logging
+  - CKV2_AZURE_21   # Blob service read logging
+  # --- Other hardening deferred for the prototype ---
+  - CKV_AZURE_124   # Container Registry: dedicated data endpoints
+  - CKV_AZURE_134   # Cognitive Services: public network access
+  - CKV_AZURE_139   # ACR: public network access
+  - CKV_AZURE_164   # ACR: trust policy / signed images
+  - CKV_AZURE_165   # ACR: geo-replication
+  - CKV_AZURE_166   # ACR: quarantine policy
+  - CKV_AZURE_167   # ACR: retention policy
+  - CKV_AZURE_189   # Cognitive Services: disable public network access
+  - CKV_AZURE_208   # ACR: zone redundancy
+  - CKV_AZURE_209   # ACR: network rules
+  - CKV_AZURE_237   # Search: more hardening
+  - CKV_AZURE_33    # Storage queue logging

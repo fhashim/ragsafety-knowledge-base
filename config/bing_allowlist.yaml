@@ -1,0 +1,13 @@
+# Allow-list of PUBLIC safety-regulator domains for Grounding with Bing Search.
+# Web grounding is feature-flagged (RAGSAFETY_ENABLE_BING_GROUNDING) and, when
+# on, the Foundry agent is restricted to these domains. Web-sourced content is
+# always labeled separately from internal policy, and internal policy wins on
+# any conflict (enforced in src/ragsafety/pipeline/generate.py).
+
+allowed_domains:
+  - osha.gov            # US Occupational Safety and Health Administration
+  - hse.gov.uk          # UK Health and Safety Executive
+  - nfpa.org            # National Fire Protection Association (e.g. NFPA 70E)
+  - ncceer.org          # placeholder regulator example  # VERIFY: replace per region
+  - energysafety.govt.nz
+  - safeworkaustralia.gov.au

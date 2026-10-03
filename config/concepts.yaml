@@ -1,0 +1,30 @@
+# Concept lexicon for the MOCK embedding model (src/ragsafety/clients/embeddings.py).
+#
+# Why this exists: a purely token-hashed fake embedding behaves like bag-of-words
+# and cannot show "vectors beat BM25 on paraphrase". To make the ablation
+# demonstrate a real, deterministic difference, the mock embedder expands text
+# into CONCEPTS before hashing. Any phrase in a concept's term list activates
+# that concept's dimension, so "hand protection" and "gloves" land near each
+# other in vector space even with zero shared tokens.
+#
+# This ONLY affects mock mode. Real embeddings come from text-embedding-3-*.
+# Exact codes (TX-400, GV-17, ...) are deliberately NOT concepts, so BM25 keyword
+# search wins for them.
+
+hand_protection: [glove, gloves, gauntlet, hand protection, hand-protection]
+eye_face_protection: [goggles, face shield, visor, eye protection, face protection]
+arc_flash: [arc flash, arc-flash, flash hazard, incident energy, cal/cm2, flash protection boundary]
+approach_distance: [approach distance, minimum approach, clearance distance, how close, stand back, gap, safe distance, limited approach]
+isolation_loto: [lockout, tagout, loto, lock out tag out, isolation, isolate, de-energize, de-energise, dead, earthing, grounding]
+voltage: [voltage, kilovolt, kv, high voltage, hv, live conductor, energised, energized]
+gas_detection: [gas detection, gas detector, lel, lower explosive limit, flammable gas, methane, combustible gas, sniffer]
+exclusion_zone: [exclusion zone, exclusion radius, exclusion distance, keep clear, cordon, safety perimeter]
+hot_work: [hot work, hot-work, welding, grinding, cutting, spark, naked flame, ignition source]
+confined_space: [confined space, entry permit, atmosphere test, ventilation, oxygen level, entry attendant]
+working_at_height: [working at height, fall protection, fall arrest, harness, scaffold, above 2 m, two metres, two meters, edge protection]
+fatigue: [fatigue, tiredness, rest break, rest, shift length, shift, hours worked, hours, how often, alertness, break]
+high_vis: [hi-vis, high visibility, high-visibility, reflective, hi vis, visible, visibility, be seen, clothing to be seen]
+lifting_rigging: [lifting, rigging, sling, crane, hoist, load chart, lift plan, below the hook]
+ppe_general: [ppe, personal protective equipment, protective equipment, protective gear, safety gear]
+permit: [permit, permit to work, authorization, authorisation, clearance certificate, work authorization]
+emergency_stop: [stop work, stop-work, emergency stop, abort, cease work, contact supervisor]

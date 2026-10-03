@@ -1,0 +1,96 @@
+name: deploy
+
+# Runs only after the eval gate workflow has completed successfully on main.
+on:
+  workflow_run:
+    workflows: ["eval-gate"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        type: choice
+        options: [dev, prod]
+        default: dev
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  ARM_USE_OIDC: "true"
+  ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+jobs:
+  deploy:
+    name: build image + deploy MCP app
+    # Gate on the eval workflow result (or manual dispatch).
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'dev' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ vars.TF_VERSION }}
+          terraform_wrapper: false
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Resolve ACR + env
+        id: ctx
+        run: |
+          ENVIR="${{ github.event.inputs.environment || 'dev' }}"
+          echo "env=$ENVIR" >> "$GITHUB_OUTPUT"
+          terraform -chdir=infra/platform init -reconfigure \
+            -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ vars.TF_STATE_CONTAINER }}" \
+            -backend-config="key=${ENVIR}/platform.tfstate"
+          echo "acr=$(terraform -chdir=infra/platform output -raw acr_login_server)" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push image
+        run: |
+          ACR="${{ steps.ctx.outputs.acr }}"
+          REGISTRY="${ACR%%.*}"
+          az acr login --name "$REGISTRY"
+          docker build -f src/ragsafety/mcp_server/Dockerfile -t "$ACR/ragsafety-mcp:${GITHUB_SHA}" .
+          docker push "$ACR/ragsafety-mcp:${GITHUB_SHA}"
+
+      - name: Terraform apply app stack
+        run: |
+          ENVIR="${{ steps.ctx.outputs.env }}"
+          terraform -chdir=infra/app init -reconfigure \
+            -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ vars.TF_STATE_CONTAINER }}" \
+            -backend-config="key=${ENVIR}/app.tfstate"
+          terraform -chdir=infra/app apply -auto-approve \
+            -var-file="../envs/${ENVIR}/${ENVIR}.tfvars" \
+            -var="subscription_id=${{ secrets.AZURE_SUBSCRIPTION_ID }}" \
+            -var="image_tag=${GITHUB_SHA}" \
+            -var="state_resource_group=${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+            -var="state_storage_account=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -var="state_container=${{ vars.TF_STATE_CONTAINER }}" \
+            -var="platform_state_key=${ENVIR}/platform.tfstate"
+
+      - name: Register Foundry agent + MCP tool
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          MCP_URL="$(terraform -chdir=infra/app output -raw mcp_url)"
+          PYTHONPATH=src python scripts/register_agent.py --mcp-url "$MCP_URL"
+
+      - name: Smoke test
+        run: |
+          MCP_URL="$(terraform -chdir=infra/app output -raw mcp_url)"
+          echo "Deployed MCP server at $MCP_URL"
+          curl -fsS --max-time 20 "$MCP_URL" >/dev/null || echo "smoke: endpoint not responding to GET (expected for MCP transport)"

@@ -1,0 +1,59 @@
+{
+  "doc": "Confined Space Standard",
+  "domain": "shared",
+  "allowed_groups": [
+    "grp-all"
+  ],
+  "blocks": [
+    {
+      "kind": "heading",
+      "text": "Confined Space Standard",
+      "page": 1,
+      "level": 1
+    },
+    {
+      "kind": "paragraph",
+      "page": 1,
+      "text": "A confined space is an enclosed or partially enclosed space not designed for continuous occupancy, with a risk of a hazardous atmosphere. Entry requires a confined space entry permit."
+    },
+    {
+      "kind": "heading",
+      "text": "1. Entry Permit",
+      "page": 1,
+      "level": 2
+    },
+    {
+      "kind": "heading",
+      "text": "1.1 Pre-Entry Checks",
+      "page": 1,
+      "level": 3
+    },
+    {
+      "kind": "paragraph",
+      "page": 1,
+      "text": "Before entry, test the atmosphere for oxygen, flammable gas and toxic gas. Oxygen must be between 19.5% and 23.5%. Flammable gas must be below 10 %LEL. Isolate all inflows and verify lockout."
+    },
+    {
+      "kind": "heading",
+      "text": "1.2 Attendant and Rescue",
+      "page": 1,
+      "level": 3
+    },
+    {
+      "kind": "paragraph",
+      "page": 1,
+      "text": "A trained attendant must remain outside the space for the duration of the entry. A rescue plan and retrieval equipment must be in place before anyone enters."
+    },
+    {
+      "kind": "heading",
+      "text": "2. Ventilation",
+      "page": 2,
+      "level": 2
+    },
+    {
+      "kind": "paragraph",
+      "page": 2,
+      "text": "Ventilate continuously during occupancy. If any gas reading exceeds its threshold, evacuate the space immediately, stop work and contact your supervisor before re-entry."
+    }
+  ]
+}

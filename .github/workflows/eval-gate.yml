@@ -1,0 +1,51 @@
+name: eval-gate
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  RAGSAFETY_MOCK_MODE: "true"
+  PYTHONPATH: src
+
+jobs:
+  eval:
+    name: eval gate (golden set)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+      - name: Generate synthetic data
+        run: python scripts/generate_data.py
+      - name: Run eval gate
+        id: eval
+        run: python eval/run_eval.py
+      - name: Post results to PR
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let body = '## Eval gate\n';
+            try {
+              body += fs.readFileSync('results/eval_report.md', 'utf8');
+            } catch (e) {
+              body += '_No report produced._';
+            }
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body,
+            });

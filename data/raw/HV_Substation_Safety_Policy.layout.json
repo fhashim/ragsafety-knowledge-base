@@ -1,0 +1,94 @@
+{
+  "doc": "HV Substation Safety Policy",
+  "domain": "electrical",
+  "allowed_groups": [
+    "grp-electrical"
+  ],
+  "blocks": [
+    {
+      "kind": "heading",
+      "text": "HV Substation Safety Policy",
+      "page": 1,
+      "level": 1
+    },
+    {
+      "kind": "paragraph",
+      "page": 1,
+      "text": "This policy governs work on high voltage (HV) substation equipment including busbars, circuit breakers such as CB-22, and the main transformer TX-400. All work requires a permit to work and a valid isolation."
+    },
+    {
+      "kind": "heading",
+      "text": "1. Minimum Approach Distances",
+      "page": 1,
+      "level": 2
+    },
+    {
+      "kind": "paragraph",
+      "page": 1,
+      "text": "The minimum approach distance (the safe gap you must keep from an exposed live conductor) depends on the system voltage. Use the table below. These are near-duplicate rules with different values, so read the voltage row carefully."
+    },
+    {
+      "kind": "table",
+      "page": 1,
+      "text": "| Voltage | Minimum Approach Distance |\n| --- | --- |\n| 11 kV | 0.64 m |\n| 33 kV | 0.86 m |\n| 66 kV | 1.00 m |\n| 132 kV | 1.40 m |"
+    },
+    {
+      "kind": "heading",
+      "text": "2. Elevated-Voltage Clearance for TX-400",
+      "page": 1,
+      "level": 2
+    },
+    {
+      "kind": "paragraph",
+      "page": 1,
+      "text": "This clause applies to planned maintenance on substation plant and must be read together with the isolation procedure and the site single line diagram. It covers the additional controls required for elevated system voltages and takes precedence over any general guidance where the two differ in scope or in the applied margins for safe working near exposed live conductors today."
+    },
+    {
+      "kind": "paragraph",
+      "page": 1,
+      "text": "Where the busbar TX-400 is worked on and the system voltage exceeds 33 kV without a secondary isolation point established, an additional clearance applies before any approach is permitted at all."
+    },
+    {
+      "kind": "paragraph",
+      "page": 1,
+      "text": "In that case the minimum approach distance shall be increased to 1.20 m and a second authorized person must be present throughout."
+    },
+    {
+      "kind": "heading",
+      "text": "3. Lockout / Tagout (LOTO)",
+      "page": 2,
+      "level": 2
+    },
+    {
+      "kind": "paragraph",
+      "page": 2,
+      "text": "Before any work, isolate the circuit, apply locks and tags, verify dead with an approved tester, and apply circuit main earths. Never remove another person's lock. Confirm CB-22 is open and racked out."
+    },
+    {
+      "kind": "heading",
+      "text": "4. Arc-Flash PPE Categories",
+      "page": 2,
+      "level": 2
+    },
+    {
+      "kind": "paragraph",
+      "page": 2,
+      "text": "Select arc-rated PPE by the arc-flash incident energy category. The category table continues on the next page; use the full table."
+    },
+    {
+      "kind": "table",
+      "page": 2,
+      "text": "| Category | Incident Energy | Required Arc-Rated PPE |\n| --- | --- | --- |\n| CAT 1 | 4 cal/cm2 | Arc-rated shirt and trousers, face shield |\n| CAT 2 | 8 cal/cm2 | Arc-rated shirt and trousers, balaclava |"
+    },
+    {
+      "kind": "table",
+      "page": 3,
+      "text": "| CAT 3 | 25 cal/cm2 | Arc flash suit, hood, gloves |\n| CAT 4 | 40 cal/cm2 | Arc flash suit (40 cal), hood, gloves |"
+    },
+    {
+      "kind": "paragraph",
+      "page": 3,
+      "text": "If the incident energy cannot be determined, stop work and contact your supervisor. Do not estimate the category."
+    }
+  ]
+}

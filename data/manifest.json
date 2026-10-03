@@ -1,0 +1,42 @@
+[
+  {
+    "source": "data/raw/HV_Substation_Safety_Policy.pdf",
+    "doc": "HV Substation Safety Policy",
+    "domain": "electrical",
+    "allowed_groups": [
+      "grp-electrical"
+    ]
+  },
+  {
+    "source": "data/raw/Gas_Pipeline_Compressor_Procedures.pdf",
+    "doc": "Gas Pipeline Compressor Procedures",
+    "domain": "gas",
+    "allowed_groups": [
+      "grp-gas"
+    ]
+  },
+  {
+    "source": "data/raw/Corporate_HSE_PPE_Standard.pdf",
+    "doc": "Corporate HSE PPE Standard",
+    "domain": "shared",
+    "allowed_groups": [
+      "grp-all"
+    ]
+  },
+  {
+    "source": "data/raw/Confined_Space_Standard.pdf",
+    "doc": "Confined Space Standard",
+    "domain": "shared",
+    "allowed_groups": [
+      "grp-all"
+    ]
+  },
+  {
+    "source": "data/raw/Lifting_Rigging_Poster.png",
+    "doc": "Lifting and Rigging Poster",
+    "domain": "shared",
+    "allowed_groups": [
+      "grp-all"
+    ]
+  }
+]

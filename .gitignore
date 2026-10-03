@@ -1,0 +1,42 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+.coverage
+htmlcov/
+
+# Env / secrets
+.env
+*.env
+!.env.example
+
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+*.tfvars.local
+my.tfvars
+.terraform.lock.hcl
+
+# Generated artifacts (kept out of git except committed data outputs)
+data/parsed/*
+data/chunks/*
+results/*.json
+audit_local/
+*.log
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Keep committed synthetic documents and the ablation report
+!data/raw/
+!data/raw/*
+!results/ablation.md
+!results/.gitkeep

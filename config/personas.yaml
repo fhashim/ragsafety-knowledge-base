@@ -1,0 +1,28 @@
+# Two demo personas mapped to the Entra groups created by the bootstrap stack.
+# In mock mode the group membership is read from here instead of a token claim.
+# In real mode these groups come from the user's Entra ID token; this file is
+# only the display metadata and the mock fallback.
+#
+# Access rule: a chunk is visible to a user if ANY of the chunk's allowed_groups
+# is in the user's groups. Shared corporate HSE content is tagged with BOTH
+# group ids (plus "grp-all"), so it is visible to everyone.
+
+personas:
+  priya:
+    display_name: "Priya Sharma"
+    role: "Electrical / HV Substation Technician"
+    groups:
+      - grp-electrical
+      - grp-all
+  marcus:
+    display_name: "Marcus Lee"
+    role: "Gas Pipeline Technician"
+    groups:
+      - grp-gas
+      - grp-all
+
+# Domain -> the group that owns that domain's documents.
+domain_groups:
+  electrical: grp-electrical
+  gas: grp-gas
+  shared: grp-all

@@ -1,0 +1,69 @@
+{
+  "doc": "Corporate HSE PPE Standard",
+  "domain": "shared",
+  "allowed_groups": [
+    "grp-all"
+  ],
+  "blocks": [
+    {
+      "kind": "heading",
+      "text": "Corporate HSE PPE Standard",
+      "page": 1,
+      "level": 1
+    },
+    {
+      "kind": "paragraph",
+      "page": 1,
+      "text": "This corporate standard applies to all field technicians across every discipline. It covers personal protective equipment (PPE), high visibility clothing, working at height, and fatigue management."
+    },
+    {
+      "kind": "heading",
+      "text": "1. Hand Protection (Glove Classes)",
+      "page": 1,
+      "level": 2
+    },
+    {
+      "kind": "paragraph",
+      "page": 1,
+      "text": "Select hand protection appropriate to the hazard. Insulating gloves must be class-rated for the working voltage and inspected before use."
+    },
+    {
+      "kind": "table",
+      "page": 1,
+      "text": "| Glove Class | Max Working Voltage | Typical Use |\n| --- | --- | --- |\n| Class 00 | 500 V | Low voltage work |\n| Class 0 | 1000 V | LV switching |\n| Class 2 | 17000 V | HV up to 17 kV |\n| Class 4 | 36000 V | HV up to 36 kV |"
+    },
+    {
+      "kind": "heading",
+      "text": "2. High-Visibility Clothing",
+      "page": 1,
+      "level": 2
+    },
+    {
+      "kind": "paragraph",
+      "page": 1,
+      "text": "Wear high-visibility (hi-vis) clothing to at least class 2 on any site with vehicle or plant movement. Hi-vis must be clean and serviceable."
+    },
+    {
+      "kind": "heading",
+      "text": "3. Working at Height",
+      "page": 2,
+      "level": 2
+    },
+    {
+      "kind": "paragraph",
+      "page": 2,
+      "text": "Working at height means any work above 2 m where a fall could cause injury. Use fall protection, a rated harness and edge protection. Inspect the harness before each use."
+    },
+    {
+      "kind": "heading",
+      "text": "4. Fatigue Management",
+      "page": 2,
+      "level": 2
+    },
+    {
+      "kind": "paragraph",
+      "page": 2,
+      "text": "Do not work more than 12 hours in a shift without a documented risk assessment. Take a rest break at least every 2 hours. If you are too fatigued to work safely, stop work and contact your supervisor."
+    }
+  ]
+}

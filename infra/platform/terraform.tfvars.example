@@ -1,0 +1,5 @@
+# Copy to a *.tfvars and pass with -var-file. In CI use ../envs/<env>/<env>.tfvars.
+subscription_id = "00000000-0000-0000-0000-000000000000"
+env             = "dev"
+location        = "eastus"
+unique          = "01"
