@@ -24,3 +24,5 @@ output "app_insights_connection_string" {
   value     = module.monitoring.app_insights_connection_string
   sensitive = true
 }
+
+output "foundry_project_endpoint" { value = module.foundry.project_endpoint }

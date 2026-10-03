@@ -1,6 +1,11 @@
 output "id" { value = azapi_resource.account.id }
 output "project_id" { value = azapi_resource.project.id }
 
+output "project_endpoint" {
+  description = "Foundry project endpoint for the Agents SDK (AIProjectClient)."
+  value       = try(azapi_resource.project.output.properties.endpoints["AI Foundry API"], "")
+}
+
 output "endpoint" {
   value = try(azapi_resource.account.output.properties.endpoint, "")
 }

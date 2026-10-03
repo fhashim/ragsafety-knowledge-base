@@ -107,15 +107,17 @@ module "container_apps_env" {
 }
 
 module "identity_rbac" {
-  source              = "../modules/identity_rbac"
-  name                = "id-${local.base}"
-  resource_group_name = azurerm_resource_group.this.name
-  location            = var.location
-  foundry_id          = module.foundry.id
-  foundry_project_id  = module.foundry.project_id
-  search_id           = module.search.id
-  storage_id          = module.storage.id
-  keyvault_id         = module.keyvault.id
-  acr_id              = module.acr.id
-  tags                = local.tags
+  source                   = "../modules/identity_rbac"
+  name                     = "id-${local.base}"
+  resource_group_name      = azurerm_resource_group.this.name
+  location                 = var.location
+  foundry_id               = module.foundry.id
+  foundry_project_id       = module.foundry.project_id
+  search_id                = module.search.id
+  storage_id               = module.storage.id
+  keyvault_id              = module.keyvault.id
+  acr_id                   = module.acr.id
+  document_intelligence_id = module.document_intelligence.id
+  deployer_principal_id    = var.deployer_principal_id
+  tags                     = local.tags
 }

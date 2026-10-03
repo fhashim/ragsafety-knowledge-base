@@ -68,3 +68,9 @@ variable "deployments" {
     embed = { name = "text-embedding-3-large", model_format = "OpenAI", model_name = "text-embedding-3-large", model_version = "1", sku_name = "Standard", capacity = 50 }
   }
 }
+
+variable "deployer_principal_id" {
+  type        = string
+  default     = ""
+  description = "CI pipeline SP object id (from bootstrap) to grant ingest/deploy data roles."
+}

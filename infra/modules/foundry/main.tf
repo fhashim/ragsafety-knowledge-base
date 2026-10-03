@@ -54,7 +54,7 @@ resource "azapi_resource" "project" {
     }
   }
 
-  response_export_values = ["identity.principalId"]
+  response_export_values = ["identity.principalId", "properties.endpoints"]
 }
 
 # Model deployments (small chat, large chat, embeddings). API 2023-05-01 is the
