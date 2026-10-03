@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from ..app import RagSafetyApp
 from ..pipeline.retrieve import retrieve
 from ..security import groups_for_claims, persona_groups, persona_meta
-from ..settings import RetrievalMode
+from ..settings import ChunkStrategy, RetrievalMode
 
 
 @dataclass
@@ -35,9 +35,41 @@ def resolve_identity(persona: str, groups: list[str] | None = None) -> Identity:
     return Identity(user=persona, persona=persona, groups=persona_groups(persona))
 
 
-def get_safety_checklist_impl(app: RagSafetyApp, identity: Identity, query: str) -> dict:
-    """Produce a grounded pre-task safety checklist for the caller."""
-    result = app.answer(query, identity.persona)
+def _resolve_strategy(app: RagSafetyApp, strategy: str | None) -> ChunkStrategy:
+    """Coerce an optional strategy string, defaulting to the server setting."""
+    if not strategy:
+        return app.settings.chunk_strategy
+    try:
+        return ChunkStrategy(strategy)
+    except ValueError as exc:
+        raise ValueError(f"unknown chunk strategy: {strategy!r}") from exc
+
+
+def _resolve_mode(app: RagSafetyApp, mode: str | None, default: RetrievalMode) -> RetrievalMode:
+    """Coerce an optional retrieval-mode string, defaulting as given."""
+    if not mode:
+        return default
+    try:
+        return RetrievalMode(mode)
+    except ValueError as exc:
+        raise ValueError(f"unknown retrieval mode: {mode!r}") from exc
+
+
+def get_safety_checklist_impl(
+    app: RagSafetyApp,
+    identity: Identity,
+    query: str,
+    strategy: str | None = None,
+    mode: str | None = None,
+) -> dict:
+    """Produce a grounded pre-task safety checklist for the caller.
+
+    ``strategy`` / ``mode`` are optional ablation overrides; when omitted the
+    server's configured defaults are used.
+    """
+    chunk_strategy = _resolve_strategy(app, strategy)
+    retrieval_mode = _resolve_mode(app, mode, app.settings.retrieval_mode)
+    result = app.answer(query, identity.persona, strategy=chunk_strategy, mode=retrieval_mode)
     out: dict = {"outcome": result.outcome, "trace_id": result.trace_id}
     if result.outcome == "answered" and result.checklist:
         out["checklist"] = result.checklist.model_dump(mode="json")
@@ -49,16 +81,27 @@ def get_safety_checklist_impl(app: RagSafetyApp, identity: Identity, query: str)
 
 
 def search_policies_impl(
-    app: RagSafetyApp, identity: Identity, query: str, top_k: int = 5
+    app: RagSafetyApp,
+    identity: Identity,
+    query: str,
+    top_k: int = 5,
+    strategy: str | None = None,
+    mode: str | None = None,
 ) -> list[dict]:
-    """Security-trimmed policy search. Returns chunk summaries the caller may see."""
-    app.ensure_ingested()  # idempotent; no-op in Azure mode
+    """Security-trimmed policy search. Returns chunk summaries the caller may see.
+
+    ``strategy`` / ``mode`` are optional ablation overrides; when omitted the
+    server's configured strategy and the ``hybrid_rerank`` mode are used.
+    """
+    chunk_strategy = _resolve_strategy(app, strategy)
+    retrieval_mode = _resolve_mode(app, mode, RetrievalMode.HYBRID_RERANK)
+    app.ensure_ingested(chunk_strategy)  # idempotent; no-op in Azure mode
     chunks, _ = retrieve(
         app.clients,
-        strategy=app.settings.chunk_strategy.value,
+        strategy=chunk_strategy.value,
         query=query,
         allowed_groups=identity.groups,
-        mode=RetrievalMode.HYBRID_RERANK,
+        mode=retrieval_mode,
         top_k=top_k,
     )
     return [
@@ -75,20 +118,28 @@ def search_policies_impl(
 
 
 def get_document_section_impl(
-    app: RagSafetyApp, identity: Identity, doc: str, section: str = ""
+    app: RagSafetyApp,
+    identity: Identity,
+    doc: str,
+    section: str = "",
+    strategy: str | None = None,
+    mode: str | None = None,
 ) -> dict:
     """Return the text of a named document section the caller is allowed to read.
 
     If the document exists but is outside the caller's boundary, this returns an
-    empty result without revealing that the document exists.
+    empty result without revealing that the document exists. ``strategy`` /
+    ``mode`` are optional ablation overrides (default: server strategy + hybrid).
     """
-    app.ensure_ingested()
+    chunk_strategy = _resolve_strategy(app, strategy)
+    retrieval_mode = _resolve_mode(app, mode, RetrievalMode.HYBRID)
+    app.ensure_ingested(chunk_strategy)
     chunks, _ = retrieve(
         app.clients,
-        strategy=app.settings.chunk_strategy.value,
+        strategy=chunk_strategy.value,
         query=f"{doc} {section}".strip(),
         allowed_groups=identity.groups,
-        mode=RetrievalMode.HYBRID,
+        mode=retrieval_mode,
         top_k=10,
     )
     matches = [

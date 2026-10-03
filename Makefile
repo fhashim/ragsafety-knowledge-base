@@ -63,6 +63,10 @@ demo: data ## Run all seven demos (mock mode)
 mcp: ## Run the MCP server locally (streamable-http on :8000)
 	$(PY) -m ragsafety.mcp_server.server
 
+.PHONY: webui
+webui: data ## Browser explorer (MCP client). Needs a server: `make mcp` or RAGSAFETY_MCP_URL=<azure-url>
+	$(PY) -m ragsafety.webui
+
 .PHONY: cost
 cost: ## Aggregate cost per user/day from the audit sink
 	$(PY) scripts/cost_report.py
